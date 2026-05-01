@@ -1,10 +1,12 @@
-import java.util.HashMap;
 import java.util.List;
 
 public class Parser {
     private final List<Token> tokens;
     private int current = 0;
-    private final HashMap<String, TokenType> symbolTable = new HashMap<>();
+    
+    // --- Modular Architecture Integration ---
+    private final Symbol_Table symbolTable = new Symbol_Table();
+    private final Semantic_Analyzer analyzer = new Semantic_Analyzer(symbolTable);
 
     public Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -32,14 +34,14 @@ public class Parser {
             
             double value = expression(); // Parses arithmetic
             
-            // Type Checking
-            if (typeToken.type == TokenType.DATATYPE_INT && (value % 1 != 0)) {
-                throw new RuntimeException("Line " + name.line + ": Type Mismatch! Cannot assign decimal to 'সংখ্যা'.");
-            }
+            // --- SEMANTIC ANALYSIS: Type Checking ---
+            analyzer.checkTypeMismatch(typeToken.type, value, name.line);
             
             consume(TokenType.SEMICOLON, "Expected ';' at end of statement.");
             
-            symbolTable.put(name.lexeme, typeToken.type);
+            // --- SYMBOL TABLE: Memory Storage ---
+            symbolTable.define(name.lexeme, typeToken.type);
+            
             System.out.println("Line " + name.line + ": Valid -> " + typeToken.lexeme + " " + name.lexeme + " = " + value);
         } else {
             throw new RuntimeException("Line " + peek().line + ": Expected Data Type. Found: " + peek().lexeme);
@@ -74,9 +76,10 @@ public class Parser {
         }
         if (match(TokenType.IDENTIFIER)) {
             String varName = previous().lexeme;
-            if (!symbolTable.containsKey(varName)) {
-                throw new RuntimeException("Line " + previous().line + ": Undeclared variable '" + varName + "'.");
-            }
+            
+            // --- SEMANTIC ANALYSIS: Undeclared Variable Check ---
+            analyzer.checkVariableDeclaration(varName, previous().line);
+            
             return 1.0; 
         }
         throw new RuntimeException("Line " + peek().line + ": Expected number or identifier.");
