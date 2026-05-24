@@ -42,7 +42,8 @@ public class Lexer {
                 break;
 
             default:
-                if (isDigit(c) || isBanglaDigit(c)) {
+               
+                if (isBanglaDigit(c)) {
                     number();
                 } else if (isAlpha(c)) {
                     identifier();
@@ -53,9 +54,10 @@ public class Lexer {
         }
     }
 
-    // ================= IDENTIFIER =================
+    //for identifier
     private void identifier() {
-        while (isAlpha(peek()) || isDigit(peek()) || isBanglaDigit(peek())) {
+        // CHANGED: Removed the isDigit(peek()) check here
+        while (isAlpha(peek()) || isBanglaDigit(peek())) {
             advance();
         }
 
@@ -70,22 +72,26 @@ public class Lexer {
         }
     }
 
-    // ================= NUMBER =================
+    //for numbers
     private void number() {
-        while (isDigit(peek()) || isBanglaDigit(peek())) {
+        
+        while (isBanglaDigit(peek())) {
             advance();
         }
 
-        if (peek() == '.' && (isDigit(peekNext()) || isBanglaDigit(peekNext()))) {
+        
+        if (peek() == '.' && isBanglaDigit(peekNext())) {
             advance();
-            while (isDigit(peek()) || isBanglaDigit(peek())) {
+            
+           
+            while (isBanglaDigit(peek())) {
                 advance();
             }
         }
 
         String raw = source.substring(start, current);
 
-        // Convert Bangla digits → English digits
+        // bangla to english digit conversion
         StringBuilder converted = new StringBuilder();
         for (char c : raw.toCharArray()) {
             if (c >= '\u09E6' && c <= '\u09EF') {
@@ -98,7 +104,7 @@ public class Lexer {
         tokens.add(new Token(TokenType.NUMBER, converted.toString(), line));
     }
 
-    // ================= HELPERS =================
+    //helpers
     private boolean isBanglaDigit(char c) {
         return c >= '\u09E6' && c <= '\u09EF';
     }
@@ -108,9 +114,7 @@ public class Lexer {
                 || Character.isLetter(c);
     }
 
-    private boolean isDigit(char c) {
-        return Character.isDigit(c);
-    }
+    // CHANGED: The private boolean isDigit(char c) helper method was completely deleted.
 
     private char advance() {
         return source.charAt(current++);
