@@ -7,6 +7,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         String filePath = "input.bng";
+        String outputFilePath = "output.py"; // The Python file we will generate
         String sourceCode = "";
 
         try {
@@ -17,16 +18,31 @@ public class Main {
             return;
         }
 
-        System.out.println("=== BANGLA COMPILER===\n");
+        System.out.println("=== BANGLA COMPILER ===\n");
         System.out.println("Reading from: " + filePath + "\n");
         System.out.println("--- Source Code ---");
         System.out.println(sourceCode);
         System.out.println("-------------------\n");
 
+        // 1. Lexical Analysis
         Lexer lexer = new Lexer(sourceCode);
         List<Token> tokens = lexer.scanTokens();
         
+        // 2. Syntax & Semantic Analysis (Building AST)
         Parser parser = new Parser(tokens);
-        parser.parse();
+        AST_Node root = parser.parse();
+        
+        // Print the Abstract Syntax Tree visually to the console
+        System.out.println("\n--- Abstract Syntax Tree (AST) ---");
+        if (root != null) {
+            root.printTree("", true);
+        }
+
+        // 3. Code Generation
+        System.out.println("\n");
+        if (root != null) {
+            Code_Generator generator = new Code_Generator();
+            generator.generate(root, outputFilePath);
+        }
     }
 }
