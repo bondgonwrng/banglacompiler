@@ -25,12 +25,16 @@ public class Lexer {
         char c = advance();
 
         switch (c) {
-            case '=': addToken(TokenType.ASSIGN); break;
+            case '=': addToken(match('=') ? TokenType.EQUAL_EQUAL : TokenType.ASSIGN); break;
             case '+': addToken(TokenType.PLUS); break;
             case '-': addToken(TokenType.MINUS); break;
             case '*': addToken(TokenType.MULTIPLY); break;
             case '/': addToken(TokenType.DIVIDE); break;
             case ';': addToken(TokenType.SEMICOLON); break;
+            case '{': addToken(TokenType.LBRACE); break;
+            case '}': addToken(TokenType.RBRACE); break;
+            case '>': addToken(TokenType.GREATER); break;
+            case '<': addToken(TokenType.LESS); break;
 
             case ' ':
             case '\r':
@@ -42,7 +46,6 @@ public class Lexer {
                 break;
 
             default:
-               
                 if (isBanglaDigit(c)) {
                     number();
                 } else if (isAlpha(c)) {
@@ -54,9 +57,7 @@ public class Lexer {
         }
     }
 
-    //for identifier
     private void identifier() {
-        // CHANGED: Removed the isDigit(peek()) check here
         while (isAlpha(peek()) || isBanglaDigit(peek())) {
             advance();
         }
@@ -67,31 +68,30 @@ public class Lexer {
             addToken(TokenType.DATATYPE_INT);
         } else if (text.equals("দশমিক")) {
             addToken(TokenType.DATATYPE_FLOAT);
+        } else if (text.equals("যদি")) {
+            addToken(TokenType.KEYWORD_IF);
+        } else if (text.equals("নাহলে")) {
+            addToken(TokenType.KEYWORD_ELSE);
+        } else if (text.equals("যতক্ষণ")) {
+            addToken(TokenType.KEYWORD_WHILE);
         } else {
             addToken(TokenType.IDENTIFIER);
         }
     }
 
-    //for numbers
     private void number() {
-        
         while (isBanglaDigit(peek())) {
             advance();
         }
 
-        
         if (peek() == '.' && isBanglaDigit(peekNext())) {
             advance();
-            
-           
             while (isBanglaDigit(peek())) {
                 advance();
             }
         }
 
         String raw = source.substring(start, current);
-
-        // bangla to english digit conversion
         StringBuilder converted = new StringBuilder();
         for (char c : raw.toCharArray()) {
             if (c >= '\u09E6' && c <= '\u09EF') {
@@ -100,21 +100,25 @@ public class Lexer {
                 converted.append(c);
             }
         }
-
         tokens.add(new Token(TokenType.NUMBER, converted.toString(), line));
     }
 
-    //helpers
+    private boolean match(char expected) {
+        if (isAtEnd()) return false;
+        if (source.charAt(current) != expected) return false;
+        current++;
+        return true;
+    }
+
     private boolean isBanglaDigit(char c) {
         return c >= '\u09E6' && c <= '\u09EF';
     }
 
     private boolean isAlpha(char c) {
         return Character.UnicodeBlock.of(c) == Character.UnicodeBlock.BENGALI
-                || Character.isLetter(c);
+                || Character.isLetter(c) 
+                || c == '_'; // Allows underscores in variables
     }
-
-    // CHANGED: The private boolean isDigit(char c) helper method was completely deleted.
 
     private char advance() {
         return source.charAt(current++);
